@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LoaderFunctionArgs, json, redirect } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import {
   useActionData,
   useLoaderData,
@@ -19,8 +19,9 @@ import {
 
 import db from "../db.server";
 import { getOrder, validateOrder } from "../models/Order.server";
-import { Order } from "@prisma/client";
-import { ActionDataProps } from "~/interfaces/common";
+import type { Order } from "@prisma/client";
+import type { ActionDataProps } from "~/interfaces/common";
+import type { LoaderFunctionArgs} from "@remix-run/node";
 
 export async function loader({ request, params }: LoaderFunctionArgs): Promise<any> {
   if (params.id === "new") {
@@ -97,8 +98,8 @@ export default function OrderForm() {
   return (
     <Page>
       <ui-title-bar title={orderRes.id ? "Edit Order" : "Create new Order"}>
-        <button variant="breadcrumb" onClick={() => navigate("/app")}>
-          Order
+        <button variant="breadcrumb" onClick={() => navigate("/app/orders")}>
+          Orders
         </button>
       </ui-title-bar>
       <Layout>

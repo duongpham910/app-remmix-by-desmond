@@ -3,7 +3,7 @@
 client_id = "c6a95eb030eb7ff84246a98520a2b19d"
 name = "app-by-desmond"
 handle = "app-by-desmond"
-application_url = "https://unwrap-alex-hospitals-hl.trycloudflare.com"
+application_url = "https://drunk-identity-pins-attraction.trycloudflare.com"
 embedded = true
 
 [build]
@@ -16,9 +16,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://unwrap-alex-hospitals-hl.trycloudflare.com/auth/callback",
-  "https://unwrap-alex-hospitals-hl.trycloudflare.com/auth/shopify/callback",
-  "https://unwrap-alex-hospitals-hl.trycloudflare.com/api/auth/callback"
+  "https://drunk-identity-pins-attraction.trycloudflare.com/auth/callback",
+  "https://drunk-identity-pins-attraction.trycloudflare.com/auth/shopify/callback",
+  "https://drunk-identity-pins-attraction.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

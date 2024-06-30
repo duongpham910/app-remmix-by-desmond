@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { useLoaderData, Link, useNavigate } from "@remix-run/react";
 import {
   Card,
@@ -7,10 +7,29 @@ import {
   Page,
   IndexTable,
 } from "@shopify/polaris";
+import saveAs from "file-saver";
+import moment from "moment";
 
 import { getOrders } from "../models/Order.server";
-import { Order } from "@prisma/client";
-import { onActionProps } from "~/interfaces/common";
+import type { Order } from "@prisma/client";
+import type { onActionProps } from "~/interfaces/common";
+import type { LoaderFunctionArgs} from "@remix-run/node";
+import type { NonEmptyArray } from "@shopify/polaris/build/ts/src/types";
+
+type HeaderItem = { title: string };
+
+const header: NonEmptyArray<HeaderItem> = [
+  { title: "Order Id" },
+  { title: "Order Number" },
+  { title: "Total Price" },
+  { title: "Payment Gateway" },
+  { title: "Customer Email" },
+  { title: "Customer Full Name" },
+  { title: "Customer Address" },
+  { title: "Tags" },
+  { title: "Created At" },
+  { title: "Action" }
+] as NonEmptyArray<HeaderItem>;
 
 export async function loader({ request }: LoaderFunctionArgs): Promise<any> {
   const orders = await getOrders();
@@ -18,6 +37,15 @@ export async function loader({ request }: LoaderFunctionArgs): Promise<any> {
   return json({
     orders,
   });
+}
+
+const exportCSV = (orders: Order[]) => {
+  const headerCSV = header.map((item: HeaderItem) => item.title).join(",")  + "\n";
+  const rows = orders.map(row => Object.values(row).join(",")).join("\n");
+  const csvContent = headerCSV + rows
+
+  var blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8'});
+  saveAs(blob, `orders_${moment().format("YYYYMMDD")}.csv`);
 }
 
 const EmptyOrderState = ({ onAction }: onActionProps) => (
@@ -40,18 +68,7 @@ const OrderTable = ({ orders }: { orders: Order[]}) => (
       plural: "Orders",
     }}
     itemCount={orders.length}
-    headings={[
-      { title: "Order Id" },
-      { title: "Order Number" },
-      { title: "Total Price" },
-      { title: "Payment Gateway" },
-      { title: "Customer Email" },
-      { title: "Customer Full Name" },
-      { title: "Customer Address" },
-      { title: "Tags" },
-      { title: "Created At" },
-      { title: "Action" }
-    ]}
+    headings={header}
     selectable={false}
   >
     {orders.map((orderObj) => (
@@ -88,6 +105,7 @@ export default function Index() {
   return (
     <Page>
       <ui-title-bar title="Order">
+        <button onClick={() => exportCSV(orders)}>Export</button>
         <button variant="primary" onClick={() => navigate("/app/order/new")}>
           Create Order
         </button>

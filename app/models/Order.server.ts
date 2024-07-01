@@ -1,7 +1,8 @@
 // import invariant from "tiny-invariant";
+import type { orderDataProps } from "~/interfaces/common";
 import db from "../db.server";
 
-export async function getOrder(id) {
+export async function getOrder(id: number) {
   const orderRecord = await db.order.findFirst({ where: { id } });
 
   if (!orderRecord) {
@@ -19,8 +20,8 @@ export async function getOrders() {
   return orders;
 }
 
-export function validateOrder(data) {
-  const errors = {};
+export function validateOrder(data: orderDataProps) {
+  const errors: orderDataProps = {};
 
   if (!data.orderId) {
     errors.orderId = "orderID is required";

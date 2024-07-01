@@ -40,8 +40,15 @@ export async function loader({ request }: LoaderFunctionArgs): Promise<any> {
 }
 
 const exportCSV = (orders: Order[]) => {
-  const headerCSV = header.map((item: HeaderItem) => item.title).join(",")  + "\n";
-  const rows = orders.map(row => Object.values(row).join(",")).join("\n");
+  const headerCSV = header.slice(0, -1).map((item: HeaderItem) => item.title).join(",")  + "\n";
+  const rows = orders.map(order => {
+    const { id, createdAt, ...rest } = order
+    const formattedOrder = {
+      ...rest,
+      createdAt: moment(createdAt).format("YYYYMMDD")
+    };
+    return Object.values(formattedOrder).join(",")
+  }).join("\n");
   const csvContent = headerCSV + rows
 
   var blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8'});
@@ -90,7 +97,7 @@ const OrderTableRow = ({ order }: { order: Order }) => (
     <IndexTable.Cell>{order.customerAddress}</IndexTable.Cell>
     <IndexTable.Cell>{order.tags}</IndexTable.Cell>
     <IndexTable.Cell>
-      {new Date(order.createdAt).toDateString()}
+      {moment(order.createdAt).format("YYYYMMDD")}
     </IndexTable.Cell>
     <IndexTable.Cell>
       <Link to={`/app/order/${order.id}`}>Edit Tag</Link>

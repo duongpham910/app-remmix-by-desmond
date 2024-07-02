@@ -18,3 +18,14 @@ export interface orderDataProps {
   customerAddress?: string | undefined;
   tags?: string | undefined;
 }
+
+export interface payloadProps {
+  orderId: string;
+  orderNumber: string;
+  totalPrice: string;
+  paymentGateway: string
+  customerEmail: string;
+  customerFullName: string;
+  customerAddress: string
+  tags: string;
+}

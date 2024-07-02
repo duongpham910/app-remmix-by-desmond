@@ -1,5 +1,5 @@
 // import invariant from "tiny-invariant";
-import type { orderDataProps } from "~/interfaces/common";
+import type { orderDataProps, payloadProps } from "~/interfaces/common";
 import db from "../db.server";
 
 export async function getOrder(id: number) {
@@ -57,5 +57,36 @@ export function validateOrder(data: orderDataProps) {
 
   if (Object.keys(errors).length) {
     return errors;
+  }
+}
+
+export async function saveOrder(payload: payloadProps) {
+  await prisma.order.create({
+    data: payload
+  })
+}
+
+export async function updateOrder(payload: payloadProps) {
+  const existOrder = await prisma.order.findFirst({ where: { orderId: payload.orderId } });
+
+  if(existOrder) {
+    await prisma.order.update({
+      where: {
+        id: existOrder.id,
+      },
+      data: payload
+    })
+  } else {
+    console.log("Not Found Order Id: ", payload.orderId)
+  }
+}
+
+export async function deleteOrder(orderId: string) {
+  const existOrder = await prisma.order.findFirst({ where: { orderId } });
+
+  if(existOrder) {
+    await prisma.order.delete({ where: { id: existOrder.id } });
+  } else {
+    console.log("Not Found Order Id: ", orderId)
   }
 }

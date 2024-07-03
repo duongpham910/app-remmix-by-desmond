@@ -6,6 +6,8 @@ import {
   Layout,
   Page,
   IndexTable,
+  Tag,
+  Box,
 } from "@shopify/polaris";
 import saveAs from "file-saver";
 import moment from "moment";
@@ -86,16 +88,18 @@ const OrderTable = ({ orders }: { orders: Order[]}) => (
 
 const OrderTableRow = ({ order }: { order: Order }) => (
   <IndexTable.Row id={order.id.toString()} position={order.id}>
-    <IndexTable.Cell>
-      <Link to={`orders/${order.id}`}>{order.orderId}</Link>
-    </IndexTable.Cell>
+    <IndexTable.Cell>{order.orderId}</IndexTable.Cell>
     <IndexTable.Cell>{order.orderNumber}</IndexTable.Cell>
     <IndexTable.Cell>{order.totalPrice}</IndexTable.Cell>
     <IndexTable.Cell>{order.paymentGateway}</IndexTable.Cell>
     <IndexTable.Cell>{order.customerFullName}</IndexTable.Cell>
     <IndexTable.Cell>{order.customerEmail}</IndexTable.Cell>
     <IndexTable.Cell>{order.customerAddress}</IndexTable.Cell>
-    <IndexTable.Cell>{order.tags}</IndexTable.Cell>
+    <IndexTable.Cell>
+      {
+        order.tags.split(",").map((tag, index) => (<Tag key={index}>{tag}</Tag>))
+      }
+    </IndexTable.Cell>
     <IndexTable.Cell>
       {moment(order.createdAt).format("YYYYMMDD")}
     </IndexTable.Cell>
@@ -112,21 +116,20 @@ export default function Index() {
   return (
     <Page>
       <ui-title-bar title="Order">
-        <button onClick={() => exportCSV(orders)}>Export</button>
-        <button variant="primary" onClick={() => navigate("/app/order/new")}>
-          Create Order
-        </button>
+        <button variant="primary" onClick={() => exportCSV(orders)}>Export</button>
       </ui-title-bar>
       <Layout>
-        <Layout.Section>
-          <Card padding="0">
-            {orders.length === 0 ? (
-              <EmptyOrderState onAction={() => navigate("/app/order/new")} />
-            ) : (
-              <OrderTable orders={orders} />
-            )}
-          </Card>
-        </Layout.Section>
+        <Box maxWidth="2500px">
+          <Layout.Section>
+            <Card padding="0">
+                {orders.length === 0 ? (
+                  <EmptyOrderState onAction={() => navigate("/app/order/new")} />
+                ) : (
+                  <OrderTable orders={orders} />
+                )}
+            </Card>
+          </Layout.Section>
+        </Box>
       </Layout>
     </Page>
   );

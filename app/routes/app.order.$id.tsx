@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { json, redirect } from "@remix-run/node";
 import {
-  useActionData,
   useLoaderData,
   useNavigation,
   useSubmit,
@@ -15,79 +14,198 @@ import {
   TextField,
   BlockStack,
   PageActions,
+  Tag,
+  Box,
+  Combobox,
+  Listbox,
+  AutoSelection,
+  EmptySearchResult,
 } from "@shopify/polaris";
 
 import db from "../db.server";
-import { getOrder, validateOrder } from "../models/Order.server";
+import { getOrder } from "../models/Order.server";
 import type { Order } from "@prisma/client";
-import type { ActionDataProps } from "~/interfaces/common";
 import type { LoaderFunctionArgs} from "@remix-run/node";
+import { authenticate } from "~/shopify.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs): Promise<any> {
-  if (params.id === "new") {
-    return json({
-      orderId: "",
-      orderNumber: "",
-      totalPrice: "",
-      paymentGateway: "",
-      customerEmail: "",
-      customerFullName: "",
-      customerAddress: "",
-      tags: "",
-    });
-  }
-
   const order = await getOrder(Number(params.id))
 
   return json(order);
 }
 
 export async function action({ request, params }: LoaderFunctionArgs) {
-  /** @type {any} */
+  const { admin, session } = await authenticate.admin(request);
+
+  const orderFromStore = new admin.rest.resources.Order({session: session});
+
   const data: any = {
     ...Object.fromEntries(await request.formData())
   };
-  const errors = validateOrder(data);
+  orderFromStore.id = parseInt(data.orderId);
+  orderFromStore.tags = data.tags;
+  await orderFromStore.save({
+    update: true,
+  });
 
-  if (errors) {
-    return json({ errors }, { status: 422 });
-  }
+  const response = await db.order.update({ where: { id: Number(params.id) }, data });
 
-  const response =
-    params.id === "new"
-      ? await db.order.create({ data })
-      : await db.order.update({ where: { id: Number(params.id) }, data });
+  console.log("response:", response)
 
-  return redirect(`/app/order/${response.id}`);
+  return redirect(`/app/orders`);
 }
 
 export default function OrderForm() {
-  const errors = useActionData<ActionDataProps>()?.errors || {};
-
   const orderRes: any = useLoaderData();
+  const tagList = orderRes.tags.split(",")
   const [formState, setFormState] = useState<Order>(orderRes);
   const [cleanFormState, setCleanFormState] = useState(orderRes);
+  const [tagField, setTagField] = useState<string[]>(tagList);
+  const [newTag, setNewTag] = useState<string>("");
+  const [suggestion, setSuggestion] = useState('');
+
   const isDirty = JSON.stringify(formState) !== JSON.stringify(cleanFormState);
 
   const nav = useNavigation();
-  const isSaving =
-    nav.state === "submitting" && nav.formData?.get("action") !== "delete";
-  const isDeleting =
-    nav.state === "submitting" && nav.formData?.get("action") === "delete";
+  const isSaving = nav.state === "submitting";
 
   const navigate = useNavigate();
 
   const submit = useSubmit();
 
-  function handleSave() {
+  const handleActiveOptionChange = useCallback(
+    (activeOption: string) => {
+      const activeOptionIsAction = activeOption === newTag;
+
+      if (!activeOptionIsAction && !tagField.includes(activeOption)) {
+        setSuggestion(activeOption);
+      } else {
+        setSuggestion("");
+      }
+    },
+    [newTag, tagField],
+  );
+  const updateSelection = useCallback(
+    (selected: string) => {
+      const nextSelectedTags = new Set([...tagField]);
+
+      if (nextSelectedTags.has(selected)) {
+        nextSelectedTags.delete(selected);
+      } else {
+        nextSelectedTags.add(selected);
+      }
+      setTagField([...nextSelectedTags]);
+      setFormState({ ...formState, tags: [...nextSelectedTags].join(",") })
+      setNewTag("");
+      setSuggestion("");
+    },
+    [formState, tagField],
+  );
+
+  const removeTag = useCallback(
+    (tag: string) => () => {
+      updateSelection(tag);
+    },
+    [updateSelection],
+  );
+
+  const getAllTags = useCallback(() => {
+    return [...tagField].sort();
+  }, [tagField]);
+
+  const formatOptionText = useCallback(
+    (option: string) => {
+      const trimValue = newTag.trim().toLocaleLowerCase();
+      const matchIndex = option.toLocaleLowerCase().indexOf(trimValue);
+
+      if (!newTag || matchIndex === -1) return option;
+
+      const start = option.slice(0, matchIndex);
+      const highlight = option.slice(matchIndex, matchIndex + trimValue.length);
+      const end = option.slice(matchIndex + trimValue.length, option.length);
+
+      return (
+        <p>
+          {start}
+          <Text fontWeight="bold" as="span">
+            {highlight}
+          </Text>
+          {end}
+        </p>
+      );
+    },
+    [newTag],
+  );
+
+  const escapeSpecialRegExCharacters = useCallback(
+    (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+    [],
+  );
+
+  const options = useMemo(() => {
+    let list;
+    const allTags = getAllTags();
+    const filterRegex = new RegExp(escapeSpecialRegExCharacters(newTag), 'i');
+
+    if (newTag) {
+      list = allTags.filter((tag) => tag.match(filterRegex));
+    } else {
+      list = allTags;
+    }
+
+    return [...list];
+  }, [newTag, getAllTags, escapeSpecialRegExCharacters]);
+
+  const optionMarkup =
+    options.length > 0
+      ? options.map((option) => {
+          return (
+            <Listbox.Option
+              key={option}
+              value={option}
+              selected={tagField.includes(option)}
+              accessibilityLabel={option}
+            >
+              <Listbox.TextOption selected={tagField.includes(option)}>
+                {formatOptionText(option)}
+              </Listbox.TextOption>
+            </Listbox.Option>
+          );
+        })
+      : null;
+
+  const noResults = newTag && !getAllTags().includes(newTag);
+
+  const actionMarkup = noResults ? (
+    <Listbox.Action value={newTag}>{`Add "${newTag}"`}</Listbox.Action>
+  ) : null;
+
+  const emptyStateMarkup = optionMarkup ? null : (
+    <EmptySearchResult
+      title=""
+      description={`No tags found matching "${newTag}"`}
+    />
+  );
+
+  const listboxMarkup =
+    optionMarkup || actionMarkup || emptyStateMarkup ? (
+      <Listbox
+        autoSelection={AutoSelection.None}
+        onSelect={updateSelection}
+        onActiveOptionChange={handleActiveOptionChange}
+      >
+        {actionMarkup}
+        {optionMarkup}
+      </Listbox>
+    ) : null;
+
+  const tagMarkup = tagField.length > 0 ? tagField.map((option) => (
+    <Tag onRemove={removeTag(option)} key={option}>{option}</Tag>
+  )): null;
+
+  const handleSave = () => {
     const data = {
       orderId: formState.orderId,
-      orderNumber: formState.orderNumber || "",
-      totalPrice: formState.totalPrice || "",
-      paymentGateway: formState.paymentGateway || "",
-      customerEmail: formState.customerEmail || "",
-      customerFullName: formState.customerFullName || "",
-      customerAddress: formState.customerAddress || "",
       tags: formState.tags || "",
     };
 
@@ -97,7 +215,7 @@ export default function OrderForm() {
 
   return (
     <Page>
-      <ui-title-bar title={orderRes.id ? "Edit Order" : "Create new Order"}>
+      <ui-title-bar title="Edit Tag Order">
         <button variant="breadcrumb" onClick={() => navigate("/app/orders")}>
           Orders
         </button>
@@ -116,8 +234,7 @@ export default function OrderForm() {
                   labelHidden
                   autoComplete="off"
                   value={formState.orderId}
-                  onChange={(orderId) => setFormState({ ...formState, orderId })}
-                  error={errors.orderId}
+                  disabled
                 />
               </BlockStack>
             </Card>
@@ -132,88 +249,7 @@ export default function OrderForm() {
                   labelHidden
                   autoComplete="off"
                   value={formState.orderNumber}
-                  onChange={(orderNumber) => setFormState({ ...formState, orderNumber })}
-                  error={errors.orderNumber}
-                />
-              </BlockStack>
-            </Card>
-            <Card>
-              <BlockStack gap="500">
-                <Text as={"h2"} variant="headingLg">
-                  Total Price
-                </Text>
-                <TextField
-                  id="totalPrice"
-                  label="Total Price"
-                  labelHidden
-                  autoComplete="off"
-                  value={formState.totalPrice}
-                  onChange={(totalPrice) => setFormState({ ...formState, totalPrice })}
-                  error={errors.totalPrice}
-                />
-              </BlockStack>
-            </Card>
-            <Card>
-              <BlockStack gap="500">
-                <Text as={"h2"} variant="headingLg">
-                  Payment Gateway
-                </Text>
-                <TextField
-                  id="paymentGateway"
-                  label="Payment Gateway"
-                  labelHidden
-                  autoComplete="off"
-                  value={formState.paymentGateway}
-                  onChange={(paymentGateway) => setFormState({ ...formState, paymentGateway })}
-                  error={errors.paymentGateway}
-                />
-              </BlockStack>
-            </Card>
-            <Card>
-              <BlockStack gap="500">
-                <Text as={"h2"} variant="headingLg">
-                  Customer Email
-                </Text>
-                <TextField
-                  id="customerEmail"
-                  label="Customer Email"
-                  labelHidden
-                  autoComplete="off"
-                  value={formState.customerEmail}
-                  onChange={(customerEmail) => setFormState({ ...formState, customerEmail })}
-                  error={errors.customerEmail}
-                />
-              </BlockStack>
-            </Card>
-            <Card>
-              <BlockStack gap="500">
-                <Text as={"h2"} variant="headingLg">
-                  Customer Full Name
-                </Text>
-                <TextField
-                  id="customerFullName"
-                  label="Customer Full Name"
-                  labelHidden
-                  autoComplete="off"
-                  value={formState.customerFullName}
-                  onChange={(customerFullName) => setFormState({ ...formState, customerFullName })}
-                  error={errors.customerFullName}
-                />
-              </BlockStack>
-            </Card>
-            <Card>
-              <BlockStack gap="500">
-                <Text as={"h2"} variant="headingLg">
-                  Customer Address
-                </Text>
-                <TextField
-                  id="customerAddress"
-                  label="Customer Address"
-                  labelHidden
-                  autoComplete="off"
-                  value={formState.customerAddress}
-                  onChange={(customerAddress) => setFormState({ ...formState, customerAddress })}
-                  error={errors.customerAddress}
+                  disabled
                 />
               </BlockStack>
             </Card>
@@ -222,15 +258,25 @@ export default function OrderForm() {
                 <Text as={"h2"} variant="headingLg">
                   Tags
                 </Text>
-                <TextField
-                  id="tags"
-                  label="Tags"
-                  labelHidden
-                  autoComplete="off"
-                  value={formState.tags}
-                  onChange={(tags) => setFormState({ ...formState, tags })}
-                  error={errors.tags}
-                />
+                <Box>
+                  {tagMarkup}
+                </Box>
+                <Combobox
+                  allowMultiple
+                  activator={
+                    <Combobox.TextField
+                      autoComplete="off"
+                      label="Search tags"
+                      labelHidden
+                      value={newTag}
+                      suggestion={suggestion}
+                      placeholder="Search tags"
+                      onChange={setNewTag}
+                    />
+                  }
+                >
+                  {listboxMarkup}
+                </Combobox>
               </BlockStack>
             </Card>
           </BlockStack>
@@ -240,21 +286,10 @@ export default function OrderForm() {
         </Layout.Section>
         <Layout.Section>
           <PageActions
-            secondaryActions={[
-              {
-                content: "Delete",
-                loading: isDeleting,
-                disabled: !orderRes.id || !orderRes || isSaving || isDeleting,
-                destructive: true,
-                outline: true,
-                onAction: () =>
-                  submit({ action: "delete" }, { method: "post" }),
-              },
-            ]}
             primaryAction={{
               content: "Save",
               loading: isSaving,
-              disabled: !isDirty || isSaving || isDeleting,
+              disabled: !isDirty || isSaving,
               onAction: handleSave,
             }}
           />

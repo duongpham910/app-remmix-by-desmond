@@ -15,11 +15,12 @@ import {
   BlockStack,
   PageActions,
   Tag,
-  Box,
   Combobox,
   Listbox,
   AutoSelection,
   EmptySearchResult,
+  InlineStack,
+  Button,
 } from "@shopify/polaris";
 
 import db from "../db.server";
@@ -57,7 +58,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 
 export default function OrderForm() {
   const orderRes: any = useLoaderData();
-  const tagList = orderRes.tags.split(",")
+  const tagList = orderRes.tags ? orderRes.tags.split(",") : []
   const [formState, setFormState] = useState<Order>(orderRes);
   const [cleanFormState, setCleanFormState] = useState(orderRes);
   const [tagField, setTagField] = useState<string[]>(tagList);
@@ -258,9 +259,9 @@ export default function OrderForm() {
                 <Text as={"h2"} variant="headingLg">
                   Tags
                 </Text>
-                <Box>
+                <InlineStack gap="100">
                   {tagMarkup}
-                </Box>
+                </InlineStack>
                 <Combobox
                   allowMultiple
                   activator={
@@ -280,11 +281,6 @@ export default function OrderForm() {
               </BlockStack>
             </Card>
           </BlockStack>
-        </Layout.Section>
-        <Layout.Section variant="oneThird">
-
-        </Layout.Section>
-        <Layout.Section>
           <PageActions
             primaryAction={{
               content: "Save",
@@ -292,6 +288,7 @@ export default function OrderForm() {
               disabled: !isDirty || isSaving,
               onAction: handleSave,
             }}
+            secondaryActions={<Button onClick={() => navigate("/app/orders")}>Close</Button>}
           />
         </Layout.Section>
       </Layout>

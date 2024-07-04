@@ -7,7 +7,7 @@ import {
   Page,
   IndexTable,
   Tag,
-  Box,
+  InlineStack,
 } from "@shopify/polaris";
 import saveAs from "file-saver";
 import moment from "moment";
@@ -17,6 +17,7 @@ import type { Order } from "@prisma/client";
 import type { onActionProps } from "~/interfaces/common";
 import type { LoaderFunctionArgs} from "@remix-run/node";
 import type { NonEmptyArray } from "@shopify/polaris/build/ts/src/types";
+import { formatDateTime, formatOrderNumber, formatPrice } from "~/utils/util";
 
 type HeaderItem = { title: string };
 
@@ -44,10 +45,16 @@ export async function loader({ request }: LoaderFunctionArgs): Promise<any> {
 const exportCSV = (orders: Order[]) => {
   const headerCSV = header.slice(0, -1).map((item: HeaderItem) => item.title).join(",")  + "\n";
   const rows = orders.map(order => {
-    const { id, createdAt, ...rest } = order
     const formattedOrder = {
-      ...rest,
-      createdAt: moment(createdAt).format("YYYYMMDD")
+      orderId: order.orderId,
+      orderNumber: formatOrderNumber(order.orderNumber),
+      totalPrice: formatPrice(parseFloat(order.totalPrice)),
+      paymentGateway: order.paymentGateway,
+      customerEmail: order.customerEmail,
+      customerFullName: order.customerFullName,
+      customerAddress: `"${order.customerAddress}"`,
+      tags: `"${order.tags}"`,
+      createdAt: formatDateTime(order.createdAt)
     };
     return Object.values(formattedOrder).join(",")
   }).join("\n");
@@ -89,19 +96,19 @@ const OrderTable = ({ orders }: { orders: Order[]}) => (
 const OrderTableRow = ({ order }: { order: Order }) => (
   <IndexTable.Row id={order.id.toString()} position={order.id}>
     <IndexTable.Cell>{order.orderId}</IndexTable.Cell>
-    <IndexTable.Cell>{order.orderNumber}</IndexTable.Cell>
-    <IndexTable.Cell>{order.totalPrice}</IndexTable.Cell>
+    <IndexTable.Cell>{formatOrderNumber(order.orderNumber)}</IndexTable.Cell>
+    <IndexTable.Cell>{formatPrice(parseFloat(order.totalPrice))}</IndexTable.Cell>
     <IndexTable.Cell>{order.paymentGateway}</IndexTable.Cell>
     <IndexTable.Cell>{order.customerFullName}</IndexTable.Cell>
     <IndexTable.Cell>{order.customerEmail}</IndexTable.Cell>
     <IndexTable.Cell>{order.customerAddress}</IndexTable.Cell>
     <IndexTable.Cell>
-      {
-        order.tags.split(",").map((tag, index) => (<Tag key={index}>{tag}</Tag>))
-      }
+      <InlineStack gap="100" direction="row" wrap={false}>
+        {order.tags.split(",").map((tag, index) => (<Tag key={index}>{tag}</Tag>))}
+      </InlineStack>
     </IndexTable.Cell>
     <IndexTable.Cell>
-      {moment(order.createdAt).format("YYYYMMDD")}
+      {formatDateTime(order.createdAt)}
     </IndexTable.Cell>
     <IndexTable.Cell>
       <Link to={`/app/order/${order.id}`}>Edit Tag</Link>
@@ -114,13 +121,12 @@ export default function Index() {
   const navigate = useNavigate();
 
   return (
-    <Page>
+    <Page fullWidth={true}>
       <ui-title-bar title="Order">
         <button variant="primary" onClick={() => exportCSV(orders)}>Export</button>
       </ui-title-bar>
       <Layout>
-        <Box maxWidth="2500px">
-          <Layout.Section>
+          <Layout.Section >
             <Card padding="0">
                 {orders.length === 0 ? (
                   <EmptyOrderState onAction={() => navigate("/app/order/new")} />
@@ -129,7 +135,6 @@ export default function Index() {
                 )}
             </Card>
           </Layout.Section>
-        </Box>
       </Layout>
     </Page>
   );

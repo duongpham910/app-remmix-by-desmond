@@ -43,17 +43,53 @@ Using npm:
 npm run dev
 ```
 
-### Database Desgin
+## Database
 
-| Column Name      | Datatype | Note |
-| ----------- | ----------- | ----------- |
-| id      | Int       | Primary Key; Default(Auto Increment) |
-| orderId   | String        |  |
-| orderNumber   | String        |  |
-| totalPrice   | String        |  |
-| paymentGateway   | String        |  |
-| customerEmail   | String        |  |
-| customerFullName   | String        |  |
-| customerAddress   | String        |  |
-| tags   | String        |
-| createdAt   | DateTime        | Default(Now) |
+### Order Table
+
+| Column Name      | Datatype      | Note                                 |
+| -----------      | -----------   | -----------                          |
+| id               |  Integer      | Primary Key; Default(Auto Increment) |
+| orderId          | String        | Not null                             |
+| orderNumber      | String        | Not null                             |
+| totalPrice       | String        | Not null                             |
+| paymentGateway   | String        | Nullable                             |
+| customerEmail    | String        | Nullable                             |
+| customerFullName | String        | Nullable                             |
+| customerAddress  | String        | Nullable                             |
+| tags             | String        | Nullable                             |
+| createdAt        | DateTime      | Default(Now)                         |
+
+### Migration
+
+Migrate Order Table:
+
+```shell
+npm run prisma migrate dev ----name create-order-table
+```
+
+Open Prisma Studio:
+
+```shell
+npm run prisma studio
+```
+
+## Webhook Configuration
+Please note that this app using api v3, please read the guide below for configuration
+
+[Guide webhooks](https://shopify.dev/docs/api/shopify-app-remix/v3/guide-webhooks) 
+
+List of subscription topic:
+```toml
+[webhooks]
+api_version = "2024-04"
+
+  [[webhooks.subscriptions]]
+    topics = [
+      "app/uninstalled",
+      "orders/create",
+      "orders/delete",
+      "orders/updated"
+    ]
+  uri = "/webhooks"
+```

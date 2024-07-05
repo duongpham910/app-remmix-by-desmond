@@ -36,10 +36,10 @@ model Order {
   orderId          String
   orderNumber      String
   totalPrice       String
-  paymentGateway   String
-  customerEmail    String
-  customerFullName String
-  customerAddress   String
-  tags             String
+  paymentGateway   String?
+  customerEmail    String?
+  customerFullName String?
+  customerAddress   String?
+  tags             String?
   createdAt        DateTime @default(now())
 }

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import {
   Page,
   Layout,
@@ -94,7 +94,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export default function Index() {
   const fetcher = useFetcher<typeof action>();
-
   const shopify = useAppBridge();
   const isLoading =
     ["loading", "submitting"].includes(fetcher.state) && fetcher.formMethod === "POST";
@@ -102,6 +101,7 @@ export default function Index() {
     "gid://shopify/Product/",
     "",
   );
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (productId) {
@@ -124,31 +124,10 @@ export default function Index() {
               <BlockStack gap="500">
                 <BlockStack gap="200">
                   <Text as="h2" variant="headingMd">
-                    Congrats on creating a new Shopify app 🎉
+                    Order Management Project developed by Desmond  🎉
                   </Text>
                   <Text variant="bodyMd" as="p">
-                    This embedded app template uses{" "}
-                    <Link
-                      url="https://shopify.dev/docs/apps/tools/app-bridge"
-                      target="_blank"
-                      removeUnderline
-                    >
-                      App Bridge
-                    </Link>{" "}
-                    interface examples like an{" "}
-                    <Link url="/app/additional" removeUnderline>
-                      additional page in the app nav
-                    </Link>
-                    , as well as an{" "}
-                    <Link
-                      url="https://shopify.dev/docs/api/admin-graphql"
-                      target="_blank"
-                      removeUnderline
-                    >
-                      Admin GraphQL
-                    </Link>{" "}
-                    mutation demo, to provide a starting point for app
-                    development.
+                    The Order App for Shopify is designed to streamline order management for merchants by integrating seamlessly with the store's webhook. It captures and stores orders efficiently, providing a system to track and tag orders,and enabling easy data export for detailed analysis.
                   </Text>
                 </BlockStack>
                 <BlockStack gap="200">
@@ -222,6 +201,19 @@ export default function Index() {
                     </Box>
                   </>
                 )}
+                <BlockStack gap="200">
+                  <Text as="h3" variant="headingMd">
+                    See the orders
+                  </Text>
+                  <Text as="p" variant="bodyMd">
+                    A shopify app that interacts with a store's webhook to capture and store orders, and provides a user-friendly interface for tagging these orders. The app should enable merchants to export orders to a CSV file
+                  </Text>
+                </BlockStack>
+                <InlineStack gap="300">
+                  <Button onClick={() => navigate("/app/orders")}>
+                    Go to list order
+                  </Button>
+                </InlineStack>
               </BlockStack>
             </Card>
           </Layout.Section>

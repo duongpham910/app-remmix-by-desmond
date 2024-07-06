@@ -3,7 +3,7 @@
 client_id = "c6a95eb030eb7ff84246a98520a2b19d"
 name = "app-by-desmond"
 handle = "app-by-desmond"
-application_url = "https://causes-erp-photographers-oaks.trycloudflare.com"
+application_url = "https://cause-upc-assistant-relevance.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_customers,read_orders,write_orders,write_products"
 
 [auth]
 redirect_urls = [
-  "https://causes-erp-photographers-oaks.trycloudflare.com/auth/callback",
-  "https://causes-erp-photographers-oaks.trycloudflare.com/auth/shopify/callback",
-  "https://causes-erp-photographers-oaks.trycloudflare.com/api/auth/callback"
+  "https://cause-upc-assistant-relevance.trycloudflare.com/auth/callback",
+  "https://cause-upc-assistant-relevance.trycloudflare.com/auth/shopify/callback",
+  "https://cause-upc-assistant-relevance.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

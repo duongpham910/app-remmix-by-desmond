@@ -1,5 +1,5 @@
 import { json } from "@remix-run/node";
-import { useLoaderData, Link, useNavigate } from "@remix-run/react";
+import { useLoaderData, Link } from "@remix-run/react";
 import {
   Card,
   EmptyState,
@@ -14,7 +14,6 @@ import moment from "moment";
 
 import { getOrders } from "../models/Order.server";
 import type { Order } from "@prisma/client";
-import type { onActionProps } from "~/interfaces/common";
 import type { LoaderFunctionArgs} from "@remix-run/node";
 import type { NonEmptyArray } from "@shopify/polaris/build/ts/src/types";
 import { formatDateTime, formatOrderNumber, formatPrice } from "~/utils/util";
@@ -64,16 +63,16 @@ const exportCSV = (orders: Order[]) => {
   saveAs(blob, `orders_${moment().format("YYYYMMDD")}.csv`);
 }
 
-const EmptyOrderState = ({ onAction }: onActionProps) => (
+const EmptyOrderState = () => (
   <EmptyState
-    heading="Create unique Order for your page"
+    heading="There are no orders here"
     action={{
-      content: "Create QR code",
-      onAction,
+      content: "Learn More",
+      url: "https://shopify.dev/docs/api/admin-rest/2024-04/resources/order",
     }}
     image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
   >
-    <p>Allow customers to create new order</p>
+    <p>An order is a customer's request to purchase one or more products from a shop.</p>
   </EmptyState>
 );
 
@@ -104,7 +103,7 @@ const OrderTableRow = ({ order }: { order: Order }) => (
     <IndexTable.Cell>{order.customerAddress}</IndexTable.Cell>
     <IndexTable.Cell>
       <InlineStack gap="100" direction="row" wrap={false}>
-        {order.tags.split(",").map((tag, index) => (<Tag key={index}>{tag}</Tag>))}
+        {order.tags?.split(",").map((tag, index) => (<Tag key={index}>{tag}</Tag>))}
       </InlineStack>
     </IndexTable.Cell>
     <IndexTable.Cell>
@@ -118,7 +117,6 @@ const OrderTableRow = ({ order }: { order: Order }) => (
 
 export default function Index() {
   const { orders }: { orders: any[] } = useLoaderData();
-  const navigate = useNavigate();
 
   return (
     <Page fullWidth={true}>
@@ -129,7 +127,7 @@ export default function Index() {
           <Layout.Section >
             <Card padding="0">
                 {orders.length === 0 ? (
-                  <EmptyOrderState onAction={() => navigate("/app/order/new")} />
+                  <EmptyOrderState/>
                 ) : (
                   <OrderTable orders={orders} />
                 )}

@@ -266,6 +266,7 @@ export default function OrderForm() {
                   allowMultiple
                   activator={
                     <Combobox.TextField
+                      id="tag"
                       autoComplete="off"
                       label="Search tags"
                       labelHidden

@@ -73,6 +73,13 @@ Open Prisma Studio:
 ```shell
 npm run prisma studio
 ```
+## Unit test
+
+Running unit test
+
+```shell
+npm run test
+```
 
 ## Webhook Configuration
 Please note that this app using api v3, please read the guide below for configuration

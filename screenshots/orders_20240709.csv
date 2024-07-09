@@ -1,0 +1,5 @@
+Order Id,Order Number,Total Price,Payment Gateway,Customer Email,Customer Full Name,Customer Address,Tags,Created At
+5215917735980,#1019,$12.66,,,desmond pham,"Ho Chi Minh City, Ho Chi Minh City, Vietnam","tag, tag1, tag2",2024/07/09 20:58:08
+5215913443372,#1018,$16.10,,john.wick@gmail.com,John Wick,"Manhattan, New York, New York, United States","test, test1, test2",2024/07/09 20:53:33
+5215905480748,#1017,$20.03,,duong.ph@gmail.com,duong pham,"Đống Đa, Ha Noi, Vietnam","dolor sit amet, lorem ipsum",2024/07/09 20:45:10
+5205451997228,#1016,$13.55,,duong.ph@gmail.com,duong pham,"Đống Đa, Ha Noi, Vietnam","cold, freeze, winter",2024/07/05 20:48:54
